@@ -1,0 +1,11 @@
+P1: Baseline result. Cat and dog are pretty easily to be confused with each other.
+P2: Variance of each class. We found that some classes might lead to different results (i.e., accuracy on test sets) in several totally same training procedure. In order to avoid the influence from this and investigate the influence of the unstability, we run the same configuration 5 times and plot the variance.
+P10: performance on cat with sequence (cat, automobile, dog)
+P4: Choose cat as first class.
+P5: Add automobile (which is quite different from cat) after cat
+P6: Add 3rd class (sequence: cat, automobile, dog)
+P7: Performance comparison of 3 method (scratch, growing classifier (with or without training))
+P8: Add dog (which is quite similar to cat) after cat
+P9: Add 3rd class automobile (sequence: cat, dog, automobile)
+P10: performance on cat with sequence (cat, dog, automobile)
+
