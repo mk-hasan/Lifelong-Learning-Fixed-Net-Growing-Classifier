@@ -138,7 +138,8 @@ def create_base_model(input_shape, baseMapNum = 32, weight_decay = 1e-4, net_typ
         
         model.add(Dense(512, activation='relu'))
 #         model.add(Dropout(0.3))
-        
+        model.add(Dense(10, activation='softmax'))
+    
     elif net_type == 'VGG16':   # not feasiable for cifar10 -- input size too small
         vgg16_net = VGG16(weights='imagenet',
                   include_top=False,
@@ -148,21 +149,21 @@ def create_base_model(input_shape, baseMapNum = 32, weight_decay = 1e-4, net_typ
         raise ValueError('unknown base net type')
     return model
 
-def training(model, num_classes_including_other, train_data, train_labels, data_generator, batch_size, epochs):
+def training(model, num_classes_including_other, train_data, train_labels, batch_size, epochs):
     
     y_train_categorical = np_utils.to_categorical(train_labels, num_classes_including_other)
     
     opt_rms = keras.optimizers.rmsprop(lr=0.001,decay=1e-6)
     model.compile(loss='categorical_crossentropy', optimizer=opt_rms, metrics=['accuracy'])
-    training_log_ep75 = model.fit(train_data, y_train_categorical, batch_size=batch_size,epochs=3*epochs, verbose=0, shuffle=False)
+    training_log_ep75 = model.fit(train_data, y_train_categorical, batch_size=batch_size,epochs=3*epochs, verbose=1, shuffle=False)
     
     opt_rms = keras.optimizers.rmsprop(lr=0.0005,decay=1e-6)
     model.compile(loss='categorical_crossentropy', optimizer=opt_rms, metrics=['accuracy'])
-    training_log_ep100 = model.fit(train_data, y_train_categorical, batch_size=batch_size, epochs=epochs, verbose=0, shuffle=False)
+    training_log_ep100 = model.fit(train_data, y_train_categorical, batch_size=batch_size, epochs=epochs, verbose=1, shuffle=False)
 
     opt_rms = keras.optimizers.rmsprop(lr=0.0003,decay=1e-6)
     model.compile(loss='categorical_crossentropy', optimizer=opt_rms, metrics=['accuracy'])
-    training_log_ep125 = model.fit(train_data, y_train_categorical, batch_size=batch_size,epochs=epochs, verbose=0, shuffle=False)
+    training_log_ep125 = model.fit(train_data, y_train_categorical, batch_size=batch_size,epochs=epochs, verbose=1, shuffle=False)
     
 #     opt_rms = keras.optimizers.rmsprop(lr=0.001,decay=1e-6)
 #     model.compile(loss='categorical_crossentropy', optimizer=opt_rms, metrics=['accuracy'])
@@ -200,14 +201,16 @@ def evaluate(model, cur_target_class_ids,test_data, test_labels, batch_size):
     acc = []
     loss = []
     confusion_mtx = []
-    num_classes = len(cur_target_class_ids)+1
+    #num_classes = len(cur_target_class_ids)+1
+    num_classes = len(cur_target_class_ids)
     for i, class_id in enumerate(cur_target_class_ids):
         target_class_indices = np.argwhere(test_labels==class_id-1)[:, 0]
         target_test_data = test_data[target_class_indices]
 #         print(len(target_test_data))
-        target_test_labels = np.array([i+1]*target_test_data.shape[0])
+        #target_test_labels = np.array([i+1]*target_test_data.shape[0])
+        target_test_labels = np.array([i+1 ]*target_test_data.shape[0])
         target_test_labels_categorical = np_utils.to_categorical(target_test_labels, num_classes)
-        scores = model.evaluate(target_test_data, target_test_labels_categorical, batch_size, verbose=0)
+        scores = model.evaluate(target_test_data, target_test_labels_categorical, batch_size, verbose=1)
         loss += [scores[0]]
         acc += [scores[1]]
         y_pred_categorical = model.predict(target_test_data)
@@ -340,7 +343,8 @@ def plot_result(acc_all_class_from_scratch, acc_GC, acc_GC_refining, full_target
 
 
 # General Procedure
-def one_run(model, x_train, y_train, x_test, y_test, batch_size, full_target_class_ids, initial_weights, base_epochs, datagen, class_names, seed=123):
+'''def one_run(model, x_train, y_train, x_test, y_test, batch_size, full_target_class_ids, initial_weights, base_epochs, datagen, class_names, seed=123):'''
+def one_run(model, x_train, y_train, x_test, y_test, batch_size, full_target_class_ids,initial_weights, base_epochs, class_names):
     
 #     np.random.seed(seed)
     num_classes_excluding_other = len(full_target_class_ids)
@@ -368,7 +372,8 @@ def one_run(model, x_train, y_train, x_test, y_test, batch_size, full_target_cla
 
 #     training(model, num_classes_including_other, cur_train_data, cur_train_labels, 
 #                            datagen, batch_size, base_epochs)
-    training(model, num_classes_including_other, x_train, y_train, datagen, batch_size, base_epochs)
+    print("num of class", num_classes_excluding_other)
+    training(model, num_classes_excluding_other, x_train, y_train, batch_size, base_epochs)
 
     acc_all_class_from_scratch, loss_all_class_from_scratch, scratch_confusion_mtx = evaluate(model, cur_target_class_ids, 
                                                                        x_test, y_test, batch_size)
@@ -402,4 +407,4 @@ def one_run(model, x_train, y_train, x_test, y_test, batch_size, full_target_cla
 #                                                      datagen, batch_size, False)
     
 #     plot_result(acc_all_class_from_scratch, acc_GC, acc_GC_refining, full_target_class_ids, class_names)
-#     return acc_all_class_from_scratch, acc_GC_refining, acc_GC
+    return acc_all_class_from_scratch, acc_GC_refining, acc_GC
